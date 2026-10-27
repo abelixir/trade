@@ -1,27 +1,40 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 const navItems = [
-  { path: "/dashboard", label: "Dashboard", icon: "📊" },
+  { path: "/dashboard", label: "Dashboard", icon: "🏠" },
   { path: "/trades", label: "Trades", icon: "📈" },
   { path: "/add-trade", label: "Add Trade", icon: "➕" },
   { path: "/analytics", label: "Analytics", icon: "📉" },
-  { path: "/journal", label: "Journal", icon: "📝" },
+  { path: "/journal", label: "Journal", icon: "📓" },
   { path: "/roadmap", label: "Roadmap", icon: "🗺️" },
 ];
 
 export default function Layout() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (stored) setUser(JSON.parse(stored));
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-900/80 border-r border-slate-800 flex flex-col backdrop-blur">
+      <aside className="w-64 bg-slate-900/95 border-r border-slate-800 flex flex-col">
         <div className="p-6 border-b border-slate-800">
           <h1 className="text-xl font-bold tracking-tight">
             <span className="text-emerald-400">Trade</span>
-            <span className="text-white">Journal</span>
+            <span className="text-white">Vibe</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-1">Track. Learn. Improve.</p>
+          <p className="text-xs text-slate-500 mt-1">Stay consistent. Stay sharp.</p>
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
@@ -30,10 +43,10 @@ export default function Layout() {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                   isActive
-                    ? "bg-emerald-500/10 text-emerald-400 shadow-sm shadow-emerald-500/10"
-                    : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
+                    : "text-slate-400 hover:bg-slate-800/70 hover:text-white"
                 }`
               }
             >
@@ -43,19 +56,25 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800 space-y-2">
+        <div className="p-4 border-t border-slate-800 space-y-3">
+          {user && (
+            <div className="px-4 py-3 bg-slate-800/60 rounded-xl border border-slate-700/50">
+              <p className="text-xs text-slate-500 mb-0.5">Logged in as</p>
+              <p className="text-sm font-semibold text-white truncate">{user.name}</p>
+              <p className="text-xs text-slate-400 truncate">{user.email}</p>
+            </div>
+          )}
           <button
-            onClick={() => navigate("/")}
-            className="w-full text-left px-4 py-2 text-sm text-slate-400 hover:text-white transition"
+            onClick={handleLogout}
+            className="w-full text-left px-4 py-2.5 text-sm text-rose-400 hover:bg-rose-500/10 rounded-xl transition font-medium"
           >
-            ← Back to Home
+            Logout
           </button>
-          <div className="text-xs text-slate-600 px-4">v0.1.0</div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      {/* Main */}
+      <main className="flex-1 overflow-auto bg-gradient-to-br from-slate-950 via-slate-950 to-slate-900">
         <div className="p-8 max-w-7xl mx-auto">
           <Outlet />
         </div>

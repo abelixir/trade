@@ -81,11 +81,11 @@ export default function Roadmap() {
     <div>
       {/* Header */}
       <div className="mb-10">
-        <h2 className="text-3xl font-bold text-white mb-2">Learning Roadmap</h2>
-        <p className="text-slate-400 max-w-2xl">
-          A clear path from beginner to advanced trader. Focus on one stage at a time and track your progress.
-        </p>
-      </div>
+  <h2 className="text-3xl font-bold text-white mb-2">Learning Roadmap</h2>
+  <p className="text-slate-400 max-w-2xl">
+    A clear path from beginner to consistent trader. Focus on one stage at a time.
+  </p>
+    </div>
 
       {/* Stages */}
       <div className="space-y-8">
