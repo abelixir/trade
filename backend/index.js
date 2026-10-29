@@ -6,17 +6,21 @@ const connectDB = require("./config/db");
 
 const authRoutes = require("./routes/auth");
 const tradesRoutes = require("./routes/trades");
+const weeklyAnalysisRoutes = require("./routes/weeklyAnalysis");
 
 connectDB();
 
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));
+// higher limit for chart screenshots (base64)
+app.use(express.json({ limit: "15mb" }));
 app.use(morgan("dev"));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/trades", tradesRoutes);
+app.use("/api/weekly-analysis", weeklyAnalysisRoutes);
+app.use(express.json({ limit: "15mb" }));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
