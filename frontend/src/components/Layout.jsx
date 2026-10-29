@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: "🏠" },
-  { path: "/trades", label: "Trades", icon: "📈" },
+  { path: "/weekly-analysis", label: "Weekly Analysis", icon: "📅" },
   { path: "/add-trade", label: "Add Trade", icon: "➕" },
   { path: "/analytics", label: "Analytics", icon: "📉" },
-  { path: "/journal", label: "Journal", icon: "📓" },
+  { path: "/journal ", label: "Journal ", icon: "📓" },
   { path: "/roadmap", label: "Roadmap", icon: "🗺️" },
 ];
 

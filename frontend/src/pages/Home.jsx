@@ -2,15 +2,18 @@ import { Link } from "react-router-dom";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white overflow-hidden">
+    <div className="relative min-h-screen bg-slate-950 text-white">
+      {/* Solid full-page background (prevents white flash) */}
+      <div className="fixed inset-0 bg-slate-950 -z-20" />
+
       {/* Background glow */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-3xl"></div>
+      <div className="fixed inset-0 pointer-events-none -z-10">
+        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Navbar */}
-      <nav className="relative border-b border-slate-800/60 backdrop-blur sticky top-0 z-50">
+      <nav className="relative border-b border-slate-800/60 backdrop-blur sticky top-0 z-50 bg-slate-950/80">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="text-xl font-bold tracking-tight">
             <span className="text-emerald-400">Trade</span>

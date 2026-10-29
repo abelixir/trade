@@ -5,7 +5,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import Trades from "./pages/Trades";
+import WeeklyAnalysis from "./pages/WeeklyAnalysis"
 import AddTrade from "./pages/AddTrade";
 import Analytics from "./pages/Analytics";
 import Journal from "./pages/Journal";
@@ -29,7 +29,7 @@ function App() {
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/trades" element={<Trades />} />
+          <Route path="/weekly-analysis" element={<WeeklyAnalysis />} />
           <Route path="/add-trade" element={<AddTrade />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/journal" element={<Journal />} />
