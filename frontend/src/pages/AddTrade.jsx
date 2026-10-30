@@ -13,8 +13,6 @@ export default function AddTrade() {
     exitPrice: "",
     positionSize: "",
     date: new Date().toISOString().split("T")[0],
-    notes: "",
-    emotion: "Neutral",
   });
 
   const handleChange = (e) => {
@@ -27,13 +25,18 @@ export default function AddTrade() {
     setLoading(true);
 
     try {
-      await createTrade({
+      const trade = await createTrade({
         ...form,
         entryPrice: Number(form.entryPrice),
         exitPrice: Number(form.exitPrice),
         positionSize: Number(form.positionSize),
+        // Journal fields stay empty — user fills them later
+        notes: "",
+        emotion: "Neutral",
       });
-      navigate("/journal");
+
+      // Go to Journal and open this trade for notes/emotion
+      navigate(`/journal?edit=${trade._id}`);
     } catch (err) {
       setError(err.message || "Failed to save trade");
     } finally {
@@ -45,12 +48,14 @@ export default function AddTrade() {
     <div>
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-white">Add Trade</h2>
-        <p className="text-slate-400 mt-1">Record a new trade in your journal</p>
+        <p className="text-slate-400 mt-1">
+          Log the numbers. Reflect later in the Journal.
+        </p>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-3xl space-y-6"
+        className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-2xl space-y-6"
       >
         {error && (
           <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl px-4 py-3 text-sm">
@@ -134,35 +139,11 @@ export default function AddTrade() {
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
             />
           </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm text-slate-400 mb-1.5">Emotion</label>
-            <select
-              name="emotion"
-              value={form.emotion}
-              onChange={handleChange}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-            >
-              <option>Confident</option>
-              <option>Fearful</option>
-              <option>Greedy</option>
-              <option>Neutral</option>
-              <option>Frustrated</option>
-              <option>Excited</option>
-            </select>
-          </div>
         </div>
 
-        <div>
-          <label className="block text-sm text-slate-400 mb-1.5">Notes / Lesson</label>
-          <textarea
-            name="notes"
-            value={form.notes}
-            onChange={handleChange}
-            rows="4"
-            placeholder="What did you learn from this trade?"
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none"
-          />
+        {/* Small professional note */}
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-sm text-slate-400">
+          Notes and emotion can be added later in the <span className="text-emerald-400">Journal</span>.
         </div>
 
         <div className="flex gap-3 pt-2">
