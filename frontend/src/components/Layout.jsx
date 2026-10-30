@@ -6,7 +6,8 @@ const navItems = [
   { path: "/weekly-analysis", label: "Weekly Analysis", icon: "📅" },
   { path: "/add-trade", label: "Add Trade", icon: "➕" },
   { path: "/analytics", label: "Analytics", icon: "📉" },
-  { path: "/journal ", label: "Journal ", icon: "📓" },
+  { path: "/journal", label: "Journal", icon: "📓" },
+  { path: "/certificates", label: "Certificates", icon: "🏆" },
   { path: "/roadmap", label: "Roadmap", icon: "🗺️" },
 ];
 
@@ -28,7 +29,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-900/95 border-r border-slate-800 flex flex-col">
+      <aside className="fixed left-0 top-0 h-full w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-30">
         <div className="p-6 border-b border-slate-800">
           <h1 className="text-xl font-bold tracking-tight">
             <span className="text-emerald-400">Trade</span>
@@ -37,7 +38,7 @@ export default function Layout() {
           <p className="text-xs text-slate-500 mt-1">Stay consistent. Stay sharp.</p>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
@@ -73,8 +74,8 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 overflow-auto bg-gradient-to-br from-slate-950 via-slate-950 to-slate-900">
+      {/* Main Content */}
+      <main className="flex-1 ml-64 min-h-screen bg-slate-950">
         <div className="p-8 max-w-7xl mx-auto">
           <Outlet />
         </div>

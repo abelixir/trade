@@ -4,33 +4,18 @@ const { protect } = require("../middleware/auth");
 
 const router = express.Router();
 
-// GET all for logged-in user
+// GET all weekly analyses of logged-in user
 router.get("/", protect, async (req, res) => {
   try {
-    const entries = await WeeklyAnalysis.find({ user: req.user._id }).sort({
-      createdAt: -1,
-    });
+    const entries = await WeeklyAnalysis.find({ user: req.user._id })
+      .sort({ createdAt: -1 });
     res.json(entries);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// GET one
-router.get("/:id", protect, async (req, res) => {
-  try {
-    const entry = await WeeklyAnalysis.findById(req.params.id);
-    if (!entry) return res.status(404).json({ message: "Not found" });
-    if (entry.user.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: "Not authorized" });
-    }
-    res.json(entry);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// CREATE
+// CREATE new weekly analysis
 router.post("/", protect, async (req, res) => {
   try {
     const { title, weekStart, weekEnd, notes, expectations, images } = req.body;
@@ -39,6 +24,9 @@ router.post("/", protect, async (req, res) => {
       return res.status(400).json({ message: "Title and week dates are required" });
     }
 
+    // Limit images to max 4
+    const safeImages = Array.isArray(images) ? images.slice(0, 4) : [];
+
     const entry = await WeeklyAnalysis.create({
       user: req.user._id,
       title: title.trim(),
@@ -46,35 +34,10 @@ router.post("/", protect, async (req, res) => {
       weekEnd,
       notes: notes || "",
       expectations: expectations || "",
-      images: images || [],
+      images: safeImages,
     });
 
     res.status(201).json(entry);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// UPDATE
-router.put("/:id", protect, async (req, res) => {
-  try {
-    const entry = await WeeklyAnalysis.findById(req.params.id);
-    if (!entry) return res.status(404).json({ message: "Not found" });
-    if (entry.user.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: "Not authorized" });
-    }
-
-    const { title, weekStart, weekEnd, notes, expectations, images } = req.body;
-
-    if (title !== undefined) entry.title = title.trim();
-    if (weekStart !== undefined) entry.weekStart = weekStart;
-    if (weekEnd !== undefined) entry.weekEnd = weekEnd;
-    if (notes !== undefined) entry.notes = notes;
-    if (expectations !== undefined) entry.expectations = expectations;
-    if (images !== undefined) entry.images = images;
-
-    const updated = await entry.save();
-    res.json(updated);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -84,7 +47,11 @@ router.put("/:id", protect, async (req, res) => {
 router.delete("/:id", protect, async (req, res) => {
   try {
     const entry = await WeeklyAnalysis.findById(req.params.id);
-    if (!entry) return res.status(404).json({ message: "Not found" });
+
+    if (!entry) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
     if (entry.user.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: "Not authorized" });
     }

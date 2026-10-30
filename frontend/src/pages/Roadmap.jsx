@@ -16,7 +16,7 @@ export default function Roadmap() {
       stage: "02",
       title: "Strategy Development",
       subtitle: "Find and refine your edge",
-      color: "blue",
+      color: "cyan",
       items: [
         { title: "Price Action Mastery", desc: "Candlesticks, support/resistance, and order flow basics" },
         { title: "Setup Building", desc: "Create clear, rule-based trading setups" },
@@ -57,11 +57,11 @@ export default function Roadmap() {
       border: "border-emerald-500/30",
       dot: "bg-emerald-500",
     },
-    blue: {
-      bg: "bg-blue-500/10",
-      text: "text-blue-400",
-      border: "border-blue-500/30",
-      dot: "bg-blue-500",
+    cyan: {
+      bg: "bg-cyan-500/10",
+      text: "text-cyan-400",
+      border: "border-cyan-500/30",
+      dot: "bg-cyan-500",
     },
     violet: {
       bg: "bg-violet-500/10",
@@ -81,11 +81,11 @@ export default function Roadmap() {
     <div>
       {/* Header */}
       <div className="mb-10">
-  <h2 className="text-3xl font-bold text-white mb-2">Learning Roadmap</h2>
-  <p className="text-slate-400 max-w-2xl">
-    A clear path from beginner to consistent trader. Focus on one stage at a time.
-  </p>
-    </div>
+        <h2 className="text-3xl font-bold text-white mb-2">Learning Roadmap</h2>
+        <p className="text-slate-400 max-w-2xl">
+          A clear path from beginner to consistent trader. Focus on one stage at a time.
+        </p>
+      </div>
 
       {/* Stages */}
       <div className="space-y-8">

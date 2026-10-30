@@ -10,6 +10,8 @@ import AddTrade from "./pages/AddTrade";
 import Analytics from "./pages/Analytics";
 import Journal from "./pages/Journal";
 import Roadmap from "./pages/Roadmap";
+import Certificates from "./pages/Certificates";
+
 
 function App() {
   return (
@@ -34,6 +36,7 @@ function App() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/journal" element={<Journal />} />
           <Route path="/roadmap" element={<Roadmap />} />
+          <Route path="/certificates" element={<Certificates />} />
         </Route>
       </Routes>
     </BrowserRouter>

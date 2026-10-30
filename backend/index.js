@@ -7,7 +7,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth");
 const tradesRoutes = require("./routes/trades");
 const weeklyAnalysisRoutes = require("./routes/weeklyAnalysis");
-
+const certificatesRoutes = require("./routes/certificates");
 connectDB();
 
 const app = express();
@@ -21,6 +21,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/trades", tradesRoutes);
 app.use("/api/weekly-analysis", weeklyAnalysisRoutes);
 app.use(express.json({ limit: "15mb" }));
+app.use("/api/certificates", certificatesRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
