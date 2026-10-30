@@ -1,35 +1,20 @@
-import { useEffect, useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { getTrades } from "../services/api";
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        setUser(null);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     const fetchTrades = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:5000/api/trades", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error("Failed to load trades");
-        const data = await res.json();
-        setTrades(Array.isArray(data) ? data : []);
+        const data = await getTrades();
+        setTrades(data);
       } catch (err) {
-        setError(err.message);
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -38,280 +23,235 @@ export default function Dashboard() {
   }, []);
 
   const stats = useMemo(() => {
-    const total = trades.length;
-    if (total === 0) {
+    if (trades.length === 0) {
       return {
         totalPnL: 0,
         winRate: 0,
         totalTrades: 0,
-        bestTrade: 0,
-        worstTrade: 0,
         wins: 0,
         losses: 0,
-        withNotes: 0,
-        avgPnL: 0,
+        avgWin: 0,
+        avgLoss: 0,
+        bestTrade: 0,
+        worstTrade: 0,
+        profitFactor: 0,
       };
     }
 
     const winsArr = trades.filter((t) => t.pnl > 0);
     const lossesArr = trades.filter((t) => t.pnl < 0);
-    const totalPnL = trades.reduce((s, t) => s + (t.pnl || 0), 0);
-    const pnls = trades.map((t) => t.pnl || 0);
+    const totalPnL = trades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+    const grossProfit = winsArr.reduce((sum, t) => sum + t.pnl, 0);
+    const grossLoss = Math.abs(lossesArr.reduce((sum, t) => sum + t.pnl, 0));
 
     return {
       totalPnL,
-      winRate: (winsArr.length / total) * 100,
-      totalTrades: total,
-      bestTrade: Math.max(...pnls),
-      worstTrade: Math.min(...pnls),
+      winRate: (winsArr.length / trades.length) * 100,
+      totalTrades: trades.length,
       wins: winsArr.length,
       losses: lossesArr.length,
-      withNotes: trades.filter((t) => t.notes && t.notes.trim()).length,
-      avgPnL: totalPnL / total,
+      avgWin: winsArr.length ? grossProfit / winsArr.length : 0,
+      avgLoss: lossesArr.length ? grossLoss / lossesArr.length : 0,
+      bestTrade: Math.max(...trades.map((t) => t.pnl)),
+      worstTrade: Math.min(...trades.map((t) => t.pnl)),
+      profitFactor: grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0,
     };
   }, [trades]);
 
-  const recent = useMemo(() => {
+  const recentTrades = useMemo(() => {
     return [...trades]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 5);
   }, [trades]);
 
-  const needsJournal = useMemo(() => {
-    return trades.filter((t) => !t.notes || !t.notes.trim()).length;
+  // Simple equity curve data
+  const equityCurve = useMemo(() => {
+    const sorted = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+    let balance = 0;
+    return sorted.map((t) => {
+      balance += t.pnl || 0;
+      return balance;
+    });
   }, [trades]);
 
-  const firstName = user?.name?.split(" ")[0] || "Trader";
+  const formatMoney = (n) => {
+    const num = Number(n) || 0;
+    return `${num >= 0 ? "+" : ""}${num.toFixed(2)}`;
+  };
 
   if (loading) {
-    return <div className="text-slate-400">Loading dashboard...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   return (
     <div>
       {/* Greeting */}
-      <div className="mb-10">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold text-white">
-          Hey {firstName}, ready to trade smarter?
+          Hey {user?.name?.split(" ")[0] || "Trader"}, ready to trade smarter?
         </h1>
-        <p className="text-slate-400 mt-2">
-          Your performance snapshot from real trades.
-        </p>
+        <p className="text-slate-400 mt-2">Here's your performance overview.</p>
       </div>
 
-      {error && (
-        <div className="mb-6 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl px-4 py-3 text-sm">
-          {error} — is the backend running on port 5000?
-        </div>
-      )}
-
-      {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-        <Card
-          label="Total P&L"
-          value={`${stats.totalPnL >= 0 ? "+" : ""}${stats.totalPnL.toFixed(2)}`}
-          sub={
-            stats.totalTrades
-              ? `${stats.wins}W / ${stats.losses}L`
-              : "No trades yet"
-          }
-          color={stats.totalPnL >= 0 ? "text-emerald-400" : "text-rose-400"}
-        />
-        <Card
-          label="Win Rate"
-          value={stats.totalTrades ? `${stats.winRate.toFixed(1)}%` : "—"}
-          sub={
-            stats.totalTrades
-              ? `${stats.totalTrades} trades logged`
-              : "Log your first trade"
-          }
-          color="text-cyan-400"
-        />
-        <Card
-          label="Trades Logged"
-          value={String(stats.totalTrades)}
-          sub={`${stats.withNotes} with journal notes`}
-          color="text-violet-400"
-        />
-        <Card
-          label="Best Trade"
-          value={
-            stats.totalTrades ? `+${stats.bestTrade.toFixed(2)}` : "—"
-          }
-          sub={
-            stats.totalTrades
-              ? `Worst: ${stats.worstTrade.toFixed(2)}`
-              : "Highest single P&L"
-          }
-          color="text-amber-400"
-        />
-      </div>
-
-      {/* Nudge: trades without notes */}
-      {needsJournal > 0 && (
-        <div className="mb-8 bg-amber-500/10 border border-amber-500/25 rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <p className="text-amber-200 font-medium text-sm">
-              {needsJournal} trade{needsJournal > 1 ? "s" : ""} still need journal notes
-            </p>
-            <p className="text-amber-200/60 text-xs mt-0.5">
-              Reflection turns logs into improvement.
-            </p>
-          </div>
+      {trades.length === 0 ? (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-16 text-center">
+          <div className="text-5xl mb-4">📈</div>
+          <h3 className="text-xl font-semibold text-white mb-2">No trades yet</h3>
+          <p className="text-slate-400 mb-6">
+            Start logging trades to see your real performance here.
+          </p>
           <Link
-            to="/journal"
-            className="text-sm font-semibold text-amber-300 hover:text-amber-200 whitespace-nowrap"
+            to="/add-trade"
+            className="inline-flex items-center bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold px-6 py-3 rounded-xl transition"
           >
-            Open Journal →
+            + Log your first trade
           </Link>
         </div>
-      )}
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent trades */}
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-lg font-semibold text-white">Recent trades</h3>
-            <Link
-              to="/journal"
-              className="text-sm text-emerald-400 hover:text-emerald-300"
-            >
-              View journal →
-            </Link>
+      ) : (
+        <>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <StatCard
+              label="Total P&L"
+              value={formatMoney(stats.totalPnL)}
+              color={stats.totalPnL >= 0 ? "text-emerald-400" : "text-rose-400"}
+            />
+            <StatCard
+              label="Win Rate"
+              value={`${stats.winRate.toFixed(1)}%`}
+              color="text-white"
+            />
+            <StatCard
+              label="Total Trades"
+              value={stats.totalTrades}
+              color="text-violet-400"
+            />
+            <StatCard
+              label="Profit Factor"
+              value={stats.profitFactor === Infinity ? "∞" : stats.profitFactor.toFixed(2)}
+              color="text-cyan-400"
+            />
           </div>
 
-          {recent.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="text-slate-400 mb-4">No trades yet</p>
+          <div className="grid lg:grid-cols-3 gap-6 mb-8">
+            {/* Equity Curve (Simple) */}
+            <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-6">
+                Equity Curve
+              </h3>
+
+              {equityCurve.length > 1 ? (
+                <div className="h-48 flex items-end gap-1">
+                  {equityCurve.map((value, i) => {
+                    const max = Math.max(...equityCurve.map(Math.abs), 1);
+                    const height = Math.max((Math.abs(value) / max) * 100, 4);
+                    const isPositive = value >= 0;
+
+                    return (
+                      <div
+                        key={i}
+                        className="flex-1 flex flex-col justify-end"
+                        title={`$${value.toFixed(2)}`}
+                      >
+                        <div
+                          className={`w-full rounded-t transition-all ${
+                            isPositive ? "bg-emerald-500/70" : "bg-rose-500/70"
+                          }`}
+                          style={{ height: `${height}%` }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="h-48 flex items-center justify-center text-slate-500">
+                  Need more trades to show equity curve
+                </div>
+              )}
+            </div>
+
+            {/* Quick Stats */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                Quick Stats
+              </h3>
+              <Row label="Wins" value={stats.wins} color="text-emerald-400" />
+              <Row label="Losses" value={stats.losses} color="text-rose-400" />
+              <Row label="Avg Win" value={formatMoney(stats.avgWin)} color="text-emerald-400" />
+              <Row label="Avg Loss" value={`-${stats.avgLoss.toFixed(2)}`} color="text-rose-400" />
+              <Row label="Best Trade" value={formatMoney(stats.bestTrade)} color="text-emerald-400" />
+              <Row label="Worst Trade" value={formatMoney(stats.worstTrade)} color="text-rose-400" />
+            </div>
+          </div>
+
+          {/* Recent Trades */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+                Recent Trades
+              </h3>
               <Link
-                to="/add-trade"
-                className="inline-block bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold px-5 py-2.5 rounded-xl transition"
+                to="/journal"
+                className="text-sm text-emerald-400 hover:text-emerald-300 transition"
               >
-                + Log a Trade
+                View all →
               </Link>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {recent.map((t) => (
+
+            <div className="divide-y divide-slate-800">
+              {recentTrades.map((trade) => (
                 <div
-                  key={t._id}
-                  className="flex items-center justify-between gap-4 bg-slate-800/40 border border-slate-800 rounded-xl px-4 py-3"
+                  key={trade._id}
+                  className="px-6 py-4 flex items-center justify-between hover:bg-slate-800/40 transition"
                 >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-white">{t.symbol}</span>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded ${
-                          t.direction === "Long"
-                            ? "bg-emerald-500/10 text-emerald-400"
-                            : "bg-rose-500/10 text-rose-400"
-                        }`}
-                      >
-                        {t.direction}
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        {new Date(t.date).toLocaleDateString()}
-                      </span>
-                      {t.notes?.trim() ? (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400/80">
-                          journaled
-                        </span>
-                      ) : (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400">
-                          no notes
-                        </span>
-                      )}
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        trade.pnl >= 0 ? "bg-emerald-400" : "bg-rose-400"
+                      }`}
+                    />
+                    <div>
+                      <p className="font-medium text-white">{trade.symbol}</p>
+                      <p className="text-xs text-slate-500">
+                        {trade.direction} · {new Date(trade.date).toLocaleDateString()}
+                      </p>
                     </div>
-                    {t.notes?.trim() ? (
-                      <p className="text-sm text-slate-400 mt-1 truncate">
-                        {t.notes}
-                      </p>
-                    ) : (
-                      <p className="text-sm text-slate-600 mt-1 italic">
-                        Add notes in Journal
-                      </p>
-                    )}
                   </div>
-                  <span
-                    className={`font-semibold shrink-0 ${
-                      t.pnl >= 0 ? "text-emerald-400" : "text-rose-400"
+                  <div
+                    className={`font-semibold ${
+                      trade.pnl >= 0 ? "text-emerald-400" : "text-rose-400"
                     }`}
                   >
-                    {t.pnl >= 0 ? "+" : ""}
-                    {t.pnl}
-                  </span>
+                    {formatMoney(trade.pnl)}
+                  </div>
                 </div>
               ))}
             </div>
-          )}
-        </div>
-
-        {/* Side panel */}
-        <div className="space-y-4">
-          <div className="bg-gradient-to-br from-emerald-500/15 to-slate-900 border border-emerald-500/20 rounded-2xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-2">Quick start</h3>
-            <p className="text-slate-400 text-sm leading-relaxed mb-5">
-              Log the numbers, then write the story in Journal. That’s the TradeVibe loop.
-            </p>
-            <Link
-              to="/add-trade"
-              className="block text-center bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold py-3 rounded-xl transition"
-            >
-              + Log a Trade
-            </Link>
           </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-1">
-            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">
-              Go to
-            </h3>
-            <NavRow to="/journal" label="Journal" icon="📓" desc="Notes & emotions" />
-            <NavRow to="/analytics" label="Analytics" icon="📉" desc="Calendar & stats" />
-            <NavRow to="/roadmap" label="Roadmap" icon="🗺️" desc="Learning path" />
-          </div>
-
-          {stats.totalTrades > 0 && (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-              <p className="text-xs text-slate-500 mb-1">Avg trade</p>
-              <p
-                className={`text-xl font-bold ${
-                  stats.avgPnL >= 0 ? "text-emerald-400" : "text-rose-400"
-                }`}
-              >
-                {stats.avgPnL >= 0 ? "+" : ""}
-                {stats.avgPnL.toFixed(2)}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
 
-function Card({ label, value, sub, color }) {
+function StatCard({ label, value, color }) {
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 hover:border-slate-700 transition">
-      <p className="text-sm text-slate-400 mb-1">{label}</p>
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
+      <p className="text-xs text-slate-400 mb-1">{label}</p>
       <p className={`text-2xl font-bold ${color}`}>{value}</p>
-      <p className="text-xs text-slate-500 mt-2">{sub}</p>
     </div>
   );
 }
 
-function NavRow({ to, label, icon, desc }) {
+function Row({ label, value, color = "text-white" }) {
   return (
-    <Link
-      to={to}
-      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/70 transition group"
-    >
-      <span className="text-lg">{icon}</span>
-      <div>
-        <p className="text-sm text-slate-200 group-hover:text-white font-medium">
-          {label}
-        </p>
-        <p className="text-xs text-slate-500">{desc}</p>
-      </div>
-    </Link>
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-slate-400">{label}</span>
+      <span className={`font-medium ${color}`}>{value}</span>
+    </div>
   );
 }

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Register() {
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -22,27 +24,10 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Registration failed");
-      }
-
-      // Save token & user
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-
+      await register(formData.name, formData.email, formData.password);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -53,10 +38,9 @@ export default function Register() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="text-2xl font-bold">
-           <span className="text-emerald-400">Trade</span>Vibe
+            <span className="text-emerald-400">Trade</span>Vibe
           </Link>
           <p className="text-slate-400 mt-2 text-sm">Create your free account</p>
-          
         </div>
 
         <form
@@ -122,7 +106,7 @@ export default function Register() {
             <Link to="/login" className="text-emerald-400 hover:underline">
               Sign in
             </Link>
-            <br></br>
+            <br />
             <Link to="/" className="text-emerald-400 hover:underline">
               Home
             </Link>

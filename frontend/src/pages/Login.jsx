@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -21,27 +23,10 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Login failed");
-      }
-
-      // Save token & user
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-
+      await login(formData.email, formData.password);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -52,10 +37,9 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="text-2xl font-bold">
-           <span className="text-emerald-400">Trade</span>Vibe
+            <span className="text-emerald-400">Trade</span>Vibe
           </Link>
           <p className="text-slate-400 mt-2 text-sm">Sign in to your account</p>
-           
         </div>
 
         <form
@@ -107,7 +91,7 @@ export default function Login() {
             <Link to="/register" className="text-emerald-400 hover:underline">
               Create one
             </Link>
-            <br></br>
+            <br />
             <Link to="/" className="text-emerald-400 hover:underline">
               Home
             </Link>

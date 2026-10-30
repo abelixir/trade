@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { getTrades, updateTrade, deleteTrade } from "../services/api";
 
 const EMOTIONS = ["Confident", "Fearful", "Greedy", "Neutral", "Frustrated", "Excited"];
 const FILTER_EMOTIONS = ["All", ...EMOTIONS];
@@ -34,7 +35,6 @@ export default function Journal() {
   const [emotionFilter, setEmotionFilter] = useState("All");
   const [directionFilter, setDirectionFilter] = useState("All");
 
-  // Which trade is open for journaling
   const [activeId, setActiveId] = useState(null);
   const [draftNotes, setDraftNotes] = useState("");
   const [draftEmotion, setDraftEmotion] = useState("Neutral");
@@ -43,12 +43,7 @@ export default function Journal() {
   const fetchTrades = async () => {
     try {
       setError("");
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/trades", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to load trades");
-      const data = await res.json();
+      const data = await getTrades();
       setTrades(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
@@ -61,13 +56,11 @@ export default function Journal() {
     fetchTrades();
   }, []);
 
-  // After Add Trade → open that trade for journaling
   useEffect(() => {
     if (!editId || trades.length === 0) return;
     const trade = trades.find((t) => t._id === editId);
     if (trade) {
       openEditor(trade);
-      // clear query so refresh doesn't keep forcing edit mode
       setSearchParams({});
     }
   }, [editId, trades]);
@@ -87,23 +80,10 @@ export default function Journal() {
   const saveJournal = async (id) => {
     setSaving(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/trades/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          notes: draftNotes.trim(),
-          emotion: draftEmotion,
-        }),
+      const updated = await updateTrade(id, {
+        notes: draftNotes.trim(),
+        emotion: draftEmotion,
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Failed to save journal");
-      }
-      const updated = await res.json();
       setTrades((prev) => prev.map((t) => (t._id === id ? updated : t)));
       closeEditor();
     } catch (err) {
@@ -116,12 +96,7 @@ export default function Journal() {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this trade from your journal?")) return;
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/trades/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Delete failed");
+      await deleteTrade(id);
       setTrades((prev) => prev.filter((t) => t._id !== id));
       if (activeId === id) closeEditor();
     } catch (err) {
@@ -137,10 +112,8 @@ export default function Journal() {
           !search ||
           notes.toLowerCase().includes(search.toLowerCase()) ||
           (e.symbol || "").toLowerCase().includes(search.toLowerCase());
-        const matchEmotion =
-          emotionFilter === "All" || e.emotion === emotionFilter;
-        const matchDirection =
-          directionFilter === "All" || e.direction === directionFilter;
+        const matchEmotion = emotionFilter === "All" || e.emotion === emotionFilter;
+        const matchDirection = directionFilter === "All" || e.direction === directionFilter;
         return matchSearch && matchEmotion && matchDirection;
       })
       .sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -154,11 +127,16 @@ export default function Journal() {
     return { count: filtered.length, wins, losses, totalPnL, withNotes };
   }, [filtered]);
 
-  if (loading) return <div className="text-slate-400">Loading journal...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div>
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h2 className="text-2xl font-bold text-white">Trading Journal</h2>
@@ -180,7 +158,6 @@ export default function Journal() {
         </div>
       )}
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Stat label="Trades" value={stats.count} />
         <Stat label="Wins" value={stats.wins} color="text-emerald-400" />
@@ -192,7 +169,6 @@ export default function Journal() {
         />
       </div>
 
-      {/* Filters */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-8 space-y-4">
         <input
           type="text"
@@ -235,7 +211,6 @@ export default function Journal() {
         </div>
       </div>
 
-      {/* Entries */}
       {filtered.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-16 text-center">
           <p className="text-slate-400 text-lg mb-2">No trades yet</p>
@@ -264,12 +239,9 @@ export default function Journal() {
                     : "border-slate-800 hover:border-slate-700"
                 }`}
               >
-                {/* Header */}
                 <div className="px-5 py-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <span className="font-semibold text-white text-lg">
-                      {entry.symbol}
-                    </span>
+                    <span className="font-semibold text-white text-lg">{entry.symbol}</span>
                     <span
                       className={`text-xs px-2.5 py-1 rounded-lg font-medium ${
                         entry.direction === "Long"
@@ -316,14 +288,12 @@ export default function Journal() {
                   </div>
                 </div>
 
-                {/* Trade numbers */}
                 <div className="px-5 py-3 flex flex-wrap gap-4 text-xs text-slate-500 border-b border-slate-800/80">
                   <span>Entry: {entry.entryPrice}</span>
                   <span>Exit: {entry.exitPrice}</span>
                   <span>Size: {entry.positionSize}</span>
                 </div>
 
-                {/* Body: view or edit */}
                 <div className="px-5 py-5">
                   {isEditing ? (
                     <div className="space-y-5">

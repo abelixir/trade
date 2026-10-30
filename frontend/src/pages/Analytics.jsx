@@ -1,41 +1,29 @@
 import { useState, useEffect, useMemo } from "react";
+import { getTrades } from "../services/api";
 
 export default function Analytics() {
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
 
-  const token = localStorage.getItem("token");
-
-  // ─── Fetch real trades from backend ───────────────────────────
   useEffect(() => {
-    const fetchTrades = async () => {
+    const fetch = async () => {
       try {
-        setLoading(true);
-        const res = await fetch("http://localhost:5000/api/trades", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) throw new Error("Failed to load trades");
-
-        const data = await res.json();
-        setTrades(data);
+        const data = await getTrades();
+        setTrades(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error(err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
+    fetch();
+  }, []);
 
-    if (token) fetchTrades();
-  }, [token]);
-
-  // ─── Core stats ───────────────────────────────────────────────
   const stats = useMemo(() => {
     const total = trades.length;
     if (total === 0) {
@@ -65,22 +53,18 @@ export default function Analytics() {
     const winsArr = trades.filter((t) => t.pnl > 0);
     const lossesArr = trades.filter((t) => t.pnl < 0);
     const breakeven = trades.filter((t) => t.pnl === 0).length;
-
     const wins = winsArr.length;
     const losses = lossesArr.length;
     const totalPnL = trades.reduce((s, t) => s + (t.pnl || 0), 0);
     const grossProfit = winsArr.reduce((s, t) => s + t.pnl, 0);
     const grossLoss = Math.abs(lossesArr.reduce((s, t) => s + t.pnl, 0));
-
     const avgWin = wins ? grossProfit / wins : 0;
     const avgLoss = losses ? grossLoss / losses : 0;
     const profitFactor =
       grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
     const expectancy = total ? totalPnL / total : 0;
-
     const bestTrade = Math.max(...trades.map((t) => t.pnl));
     const worstTrade = Math.min(...trades.map((t) => t.pnl));
-
     const longTrades = trades.filter((t) => t.direction === "Long");
     const shortTrades = trades.filter((t) => t.direction === "Short");
     const longWins = longTrades.filter((t) => t.pnl > 0).length;
@@ -130,7 +114,6 @@ export default function Analytics() {
     };
   }, [trades]);
 
-  // ─── Daily PnL map for calendar ───────────────────────────────
   const dailyPnL = useMemo(() => {
     const map = {};
     trades.forEach((t) => {
@@ -172,7 +155,7 @@ export default function Analytics() {
   }, [dailyPnL, year, month]);
 
   const formatMoney = (n) => {
-    const num = Number(n) || 0;
+    const num = Number(n);
     const sign = num >= 0 ? "+" : "";
     return `${sign}${num.toFixed(2)}`;
   };
@@ -189,7 +172,6 @@ export default function Analytics() {
     return "bg-rose-500/15 border-rose-500/30";
   };
 
-  // Build calendar cells
   const calendarCells = [];
   for (let i = 0; i < startWeekday; i++) {
     calendarCells.push(<div key={`empty-${i}`} className="aspect-square" />);
@@ -225,194 +207,154 @@ export default function Analytics() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading analytics...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
     <div>
-      {/* Header */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-white">Analytics</h2>
-        <p className="text-slate-400 mt-1">
-          Performance calendar & detailed statistics
-        </p>
+        <p className="text-slate-400 mt-1">Performance calendar & detailed statistics</p>
       </div>
 
-      {trades.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-16 text-center">
-          <div className="text-5xl mb-4">📊</div>
-          <h3 className="text-xl font-semibold text-white mb-2">No trades yet</h3>
-          <p className="text-slate-400 mb-6">
-            Log some trades first to see your performance analytics.
-          </p>
-          <a Dual
-            href="/add-trade"
-            className="inline-flex items-center bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold px-6 py-3 rounded-xl transition"
-          >
-            + Log your first trade
-          </a>
+      {error && (
+        <div className="mb-6 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl px-4 py-3 text-sm">
+          {error}
         </div>
-      ) : (
-        <>
-          {/* Top KPI cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-            <StatCard
-              label="Total P&L"
-              value={formatMoney(stats.totalPnL)}
-              color={stats.totalPnL >= 0 ? "text-emerald-400" : "text-rose-400"}
-            />
-            <StatCard
-              label="Win Rate"
-              value={`${stats.winRate.toFixed(1)}%`}
-              color="text-white"
-            />
-            <StatCard
-              label="Profit Factor"
-              value={stats.profitFactor === Infinity ? "∞" : stats.profitFactor.toFixed(2)}
-              color="text-cyan-400"
-            />
-            <StatCard
-              label="Expectancy"
-              value={formatMoney(stats.expectancy)}
-              color={stats.expectancy >= 0 ? "text-emerald-400" : "text-rose-400"}
-            />
-            <StatCard
-              label="Avg Win"
-              value={formatMoney(stats.avgWin)}
-              color="text-emerald-400"
-            />
-            <StatCard
-              label="Avg Loss"
-              value={`-${stats.avgLoss.toFixed(2)}`}
-              color="text-rose-400"
-            />
-          </div>
-
-          <div className="grid lg:grid-cols-5 gap-6 mb-8">
-            {/* Calendar */}
-            <div className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6">
-              <div className="flex items-center justify-between mb-5">
-                <button
-                  onClick={prevMonth}
-                  className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition"
-                >
-                  ←
-                </button>
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold text-white">{monthLabel}</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {monthStats.tradesCount} trades ·{" "}
-                    <span className={monthStats.pnl >= 0 ? "text-emerald-400" : "text-rose-400"}>
-                      {formatMoney(monthStats.pnl)}
-                    </span>
-                  </p>
-                </div>
-                <button
-                  onClick={nextMonth}
-                  className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition"
-                >
-                  →
-                </button>
-              </div>
-
-              <div className="grid grid-cols-7 gap-1.5 mb-1.5">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                  <div key={d} className="text-center text-[11px] text-slate-500 font-medium py-1">
-                    {d}
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-7 gap-1.5">{calendarCells}</div>
-
-              <div className="flex items-center justify-center gap-4 mt-5 text-xs text-slate-500">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded bg-emerald-500/30 border border-emerald-500/40" />
-                  Profit
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded bg-rose-500/30 border border-rose-500/40" />
-                  Loss
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded bg-slate-800/40 border border-slate-800" />
-                  No trade
-                </div>
-              </div>
-            </div>
-
-            {/* Side stats */}
-            <div className="lg:col-span-2 space-y-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-                  Trade Breakdown
-                </h3>
-                <Row label="Total Trades" value={stats.totalTrades} />
-                <Row label="Wins" value={stats.wins} color="text-emerald-400" />
-                <Row label="Losses" value={stats.losses} color="text-rose-400" />
-                <Row label="Breakeven" value={stats.breakeven} />
-                <div className="border-t border-slate-800 pt-3" />
-                <Row label="Best Trade" value={formatMoney(stats.bestTrade)} color="text-emerald-400" />
-                <Row label="Worst Trade" value={formatMoney(stats.worstTrade)} color="text-rose-400" />
-                <Row label="Avg Trade" value={formatMoney(stats.avgPnL)} />
-              </div>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-                  Direction & Streaks
-                </h3>
-                <Row
-                  label={`Long (${stats.longTrades})`}
-                  value={`${stats.longWinRate.toFixed(0)}% WR`}
-                />
-                <Row
-                  label={`Short (${stats.shortTrades})`}
-                  value={`${stats.shortWinRate.toFixed(0)}% WR`}
-                />
-                <div className="border-t border-slate-800 pt-3" />
-                <Row label="Max Win Streak" value={stats.maxWinStreak} color="text-emerald-400" />
-                <Row label="Max Loss Streak" value={stats.maxLossStreak} color="text-rose-400" />
-              </div>
-            </div>
-          </div>
-
-          {/* Insight cards */}
-          <div className="grid md:grid-cols-3 gap-4">
-            <InsightCard
-              title="Risk / Reward"
-              value={stats.avgLoss > 0 ? (stats.avgWin / stats.avgLoss).toFixed(2) : "—"}
-              subtitle="Avg Win ÷ Avg Loss"
-            />
-            <InsightCard
-              title="Win Rate Needed"
-              value={
-                stats.avgWin + stats.avgLoss > 0
-                  ? `${((stats.avgLoss / (stats.avgWin + stats.avgLoss)) * 100).toFixed(0)}%`
-                  : "—"
-              }
-              subtitle="Break-even win rate"
-            />
-            <InsightCard
-              title="Consistency"
-              value={`${stats.maxWinStreak} / ${stats.maxLossStreak}`}
-              subtitle="Best win streak / worst loss streak"
-            />
-          </div>
-        </>
       )}
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <StatCard
+          label="Total P&L"
+          value={formatMoney(stats.totalPnL)}
+          color={stats.totalPnL >= 0 ? "text-emerald-400" : "text-rose-400"}
+        />
+        <StatCard label="Win Rate" value={`${stats.winRate.toFixed(1)}%`} color="text-white" />
+        <StatCard
+          label="Profit Factor"
+          value={stats.profitFactor === Infinity ? "∞" : stats.profitFactor.toFixed(2)}
+          color="text-cyan-400"
+        />
+        <StatCard
+          label="Expectancy"
+          value={formatMoney(stats.expectancy)}
+          color={stats.expectancy >= 0 ? "text-emerald-400" : "text-rose-400"}
+        />
+        <StatCard label="Avg Win" value={formatMoney(stats.avgWin)} color="text-emerald-400" />
+        <StatCard label="Avg Loss" value={`-${stats.avgLoss.toFixed(2)}`} color="text-rose-400" />
+      </div>
+
+      <div className="grid lg:grid-cols-5 gap-6 mb-8">
+        <div className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6">
+          <div className="flex items-center justify-between mb-5">
+            <button
+              onClick={prevMonth}
+              className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition"
+            >
+              ←
+            </button>
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-white">{monthLabel}</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {monthStats.tradesCount} trades ·{" "}
+                <span className={monthStats.pnl >= 0 ? "text-emerald-400" : "text-rose-400"}>
+                  {formatMoney(monthStats.pnl)}
+                </span>
+              </p>
+            </div>
+            <button
+              onClick={nextMonth}
+              className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition"
+            >
+              →
+            </button>
+          </div>
+
+          <div className="grid grid-cols-7 gap-1.5 mb-1.5">
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+              <div key={d} className="text-center text-[11px] text-slate-500 font-medium py-1">
+                {d}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-1.5">{calendarCells}</div>
+
+          <div className="flex items-center justify-center gap-4 mt-5 text-xs text-slate-500">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded bg-emerald-500/30 border border-emerald-500/40" />
+              Profit
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded bg-rose-500/30 border border-rose-500/40" />
+              Loss
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded bg-slate-800/40 border border-slate-800" />
+              No trade
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+              Trade Breakdown
+            </h3>
+            <Row label="Total Trades" value={stats.totalTrades} />
+            <Row label="Wins" value={stats.wins} color="text-emerald-400" />
+            <Row label="Losses" value={stats.losses} color="text-rose-400" />
+            <Row label="Breakeven" value={stats.breakeven} />
+            <div className="border-t border-slate-800 pt-3" />
+            <Row label="Best Trade" value={formatMoney(stats.bestTrade)} color="text-emerald-400" />
+            <Row label="Worst Trade" value={formatMoney(stats.worstTrade)} color="text-rose-400" />
+            <Row label="Avg Trade" value={formatMoney(stats.avgPnL)} />
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+              Direction & Streaks
+            </h3>
+            <Row label={`Long (${stats.longTrades})`} value={`${stats.longWinRate.toFixed(0)}% WR`} />
+            <Row label={`Short (${stats.shortTrades})`} value={`${stats.shortWinRate.toFixed(0)}% WR`} />
+            <div className="border-t border-slate-800 pt-3" />
+            <Row label="Max Win Streak" value={stats.maxWinStreak} color="text-emerald-400" />
+            <Row label="Max Loss Streak" value={stats.maxLossStreak} color="text-rose-400" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-4">
+        <InsightCard
+          title="Risk / Reward"
+          value={stats.avgLoss > 0 ? (stats.avgWin / stats.avgLoss).toFixed(2) : "—"}
+          subtitle="Avg Win ÷ Avg Loss"
+        />
+        <InsightCard
+          title="Win Rate Needed"
+          value={
+            stats.avgWin + stats.avgLoss > 0
+              ? `${((stats.avgLoss / (stats.avgWin + stats.avgLoss)) * 100).toFixed(0)}%`
+              : "—"
+          }
+          subtitle="Break-even win rate"
+        />
+        <InsightCard
+          title="Consistency"
+          value={`${stats.maxWinStreak} / ${stats.maxLossStreak}`}
+          subtitle="Best win streak / worst loss streak"
+        />
+      </div>
     </div>
   );
 }
 
 function StatCard({ label, value, color }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 hover:border-slate-700 transition">
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
       <p className="text-xs text-slate-400 mb-1">{label}</p>
       <p className={`text-xl font-bold ${color}`}>{value}</p>
     </div>
@@ -430,7 +372,7 @@ function Row({ label, value, color = "text-white" }) {
 
 function InsightCard({ title, value, subtitle }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
       <p className="text-xs text-slate-400 mb-1">{title}</p>
       <p className="text-2xl font-bold text-white">{value}</p>
       <p className="text-xs text-slate-500 mt-1">{subtitle}</p>

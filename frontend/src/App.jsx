@@ -5,13 +5,12 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import WeeklyAnalysis from "./pages/WeeklyAnalysis"
+import WeeklyAnalysis from "./pages/WeeklyAnalysis";
 import AddTrade from "./pages/AddTrade";
 import Analytics from "./pages/Analytics";
 import Journal from "./pages/Journal";
-import Roadmap from "./pages/Roadmap";
 import Certificates from "./pages/Certificates";
-
+import Roadmap from "./pages/Roadmap";
 
 function App() {
   return (
@@ -35,8 +34,8 @@ function App() {
           <Route path="/add-trade" element={<AddTrade />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/journal" element={<Journal />} />
-          <Route path="/roadmap" element={<Roadmap />} />
           <Route path="/certificates" element={<Certificates />} />
+          <Route path="/roadmap" element={<Roadmap />} />
         </Route>
       </Routes>
     </BrowserRouter>
