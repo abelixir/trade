@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 export default function Home() {
   return (
     <div className="relative min-h-screen bg-slate-950 text-white">
-      {/* Solid full-page background (prevents white flash) */}
+      {/* Solid full-page background */}
       <div className="fixed inset-0 bg-slate-950 -z-20" />
 
       {/* Background glow */}
@@ -30,65 +30,80 @@ export default function Home() {
               to="/register"
               className="text-sm bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-5 py-2 rounded-full font-semibold transition shadow-lg shadow-emerald-500/25"
             >
-              Join the Vibe
+              Get Started
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative max-w-6xl mx-auto px-6 pt-28 pb-24 text-center">
-        <div className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-4 py-1.5 rounded-full mb-8 border border-emerald-500/20">
-          🔥 Built for traders who actually want to improve
-        </div>
+            {/* Hero */}
+        <section className="relative max-w-6xl mx-auto px-6 pt-24 md:pt-32 pb-24 text-center">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-4 py-1.5 rounded-full mb-8 border border-emerald-500/20">
+            Built for traders who want real consistency
+          </div>
 
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
-          Stop guessing.
-          <br />
-          <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
-            Start journaling.
-          </span>
-        </h1>
+          <h1 className="text-2xl sm:text-3xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-5">
+            Welcome to{" "}
+            <span className="text-emerald-400">Trade</span>
+            <span className="text-white">Vibe</span>
+          </h1>
 
-        <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-          TradeVibe is the journal that feels alive. Track trades, spot your patterns,
-          and build real consistency — without the boring spreadsheet vibes.
-        </p>
+          <p className="text-2xl sm:text-3xl md:text-4xl font-semibold text-slate-200 mb-6 leading-tight">
+            Stop guessing.{" "}
+            <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+              Start journaling.
+            </span>
+          </p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            to="/register"
-            className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-8 py-4 rounded-2xl font-semibold text-lg transition shadow-xl shadow-emerald-500/30"
-          >
-            Start Free →
-          </Link>
-          <Link
-            to="/login"
-            className="bg-slate-900 hover:bg-slate-800 text-white px-8 py-4 rounded-2xl font-medium transition border border-slate-700"
-          >
-            I already have an account
-          </Link>
-        </div>
-      </section>
+          <p className="text-base md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed">
+            The trading journal that helps you track every trade, understand your
+            patterns, and build the discipline that separates amateurs from
+            professionals.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              to="/register"
+              className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-8 py-4 rounded-2xl font-semibold text-lg transition shadow-xl shadow-emerald-500/30"
+            >
+              Start Free →
+            </Link>
+            <Link
+              to="/login"
+              className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white px-8 py-4 rounded-2xl font-medium transition border border-slate-700"
+            >
+              I already have an account
+            </Link>
+          </div>
+        </section>
 
       {/* Features */}
-      <section className="relative max-w-6xl mx-auto px-6 py-20">
+      <section className="relative max-w-6xl mx-auto px-6 py-16 md:py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+            Everything you need to improve
+          </h2>
+          <p className="text-slate-400 max-w-xl mx-auto">
+            Simple tools. Clear insights. Built around how real traders actually work.
+          </p>
+        </div>
+
         <div className="grid md:grid-cols-3 gap-6">
           {[
             {
-              title: "Log it in seconds",
-              desc: "Quick trade entry with notes, emotions and screenshots. No friction.",
+              title: "Log trades in seconds",
+              desc: "Capture symbol, direction, entry, exit and size — then reflect later in the journal.",
               emoji: "⚡",
             },
             {
               title: "See the real numbers",
-              desc: "Win rate, R-multiples, best days and setups — clear and honest.",
+              desc: "Win rate, profit factor, equity curve and calendar heatmaps — honest performance data.",
               emoji: "📊",
             },
             {
-              title: "Follow the roadmap",
-              desc: "A clear path from beginner to consistent. No more random YouTube rabbit holes.",
-              emoji: "🗺️",
+              title: "Journal with intention",
+              desc: "Add notes, emotions and lessons to every trade. Spot the habits that cost you money.",
+              emoji: "📓",
             },
           ].map((item) => (
             <div
@@ -103,14 +118,61 @@ export default function Home() {
         </div>
       </section>
 
+      {/* What you get */}
+      <section className="relative max-w-6xl mx-auto px-6 py-16 md:py-20">
+        <div className="grid lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+              A complete trading journal system
+            </h2>
+            <p className="text-slate-400 leading-relaxed mb-8">
+              TradeVibe is designed to take you from random results to a clear,
+              repeatable process — without spreadsheets or complicated tools.
+            </p>
+            <ul className="space-y-4">
+              {[
+                "Dashboard with live P&L, win rate and equity curve",
+                "Full trade journal with filters and emotion tracking",
+                "Weekly analysis with chart uploads",
+                "Analytics calendar and performance breakdown",
+                "Certificates vault for your achievements",
+                "Clear learning roadmap from beginner to mastery",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3 text-slate-300">
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-5">
+            {[
+              { label: "Trade logging", value: "Fast & focused" },
+              { label: "Reflection", value: "Notes + emotion" },
+              { label: "Analytics", value: "Real performance" },
+              { label: "Progress", value: "Roadmap guided" },
+            ].map((row) => (
+              <div
+                key={row.label}
+                className="flex items-center justify-between py-3 border-b border-slate-800 last:border-0"
+              >
+                <span className="text-slate-400">{row.label}</span>
+                <span className="font-medium text-emerald-400">{row.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Roadmap teaser */}
-      <section className="relative max-w-6xl mx-auto px-6 py-20">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">Your path to consistency</h2>
+      <section className="relative max-w-6xl mx-auto px-6 py-16 md:py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-2xl md:text-3xl font-bold mb-3">Your path to consistency</h2>
           <p className="text-slate-400">Four stages. Clear focus. Real progress.</p>
         </div>
 
-        <div className="grid md:grid-cols-4 gap-5">
+        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-5">
           {[
             { stage: "01", title: "Foundations", items: ["Risk", "Psychology", "Basics"] },
             { stage: "02", title: "Strategy", items: ["Price Action", "Setups", "Backtesting"] },
@@ -128,7 +190,7 @@ export default function Home() {
               <ul className="space-y-2 relative">
                 {item.items.map((i) => (
                   <li key={i} className="text-sm text-slate-400 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     {i}
                   </li>
                 ))}
@@ -138,14 +200,18 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="relative max-w-6xl mx-auto px-6 py-24">
-        <div className="bg-gradient-to-br from-emerald-500/20 via-slate-900 to-cyan-500/10 border border-emerald-500/20 rounded-[2rem] p-12 md:p-16 text-center">
+      {/* Final CTA */}
+      <section className="relative max-w-6xl mx-auto px-6 py-20 md:py-24">
+        <div className="bg-gradient-to-br from-emerald-500/20 via-slate-900 to-cyan-500/10 border border-emerald-500/20 rounded-[2rem] p-10 md:p-16 text-center">
+          <p className="text-emerald-400 text-sm font-medium uppercase tracking-wide mb-3">
+            Welcome to TradeVibe
+          </p>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to give your trading a real vibe?
+            Ready to trade with intention?
           </h2>
           <p className="text-slate-400 mb-10 max-w-xl mx-auto text-lg">
-            Create your free account and start logging trades the right way.
+            Create your free account and start building the habits that lead to
+            consistent results.
           </p>
           <Link
             to="/register"

@@ -14,6 +14,15 @@ const request = async (endpoint, options = {}) => {
   };
 
   const res = await fetch(`${API_URL}${endpoint}`, config);
+
+  // Token expired or invalid → force logout
+  if (res.status === 401) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/login";
+    throw new Error("Session expired. Please log in again.");
+  }
+
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
