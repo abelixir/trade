@@ -14,14 +14,11 @@ connectDB();
 const app = express();
 
 app.use(cors());
-// higher limit for chart screenshots (base64)
 app.use(express.json({ limit: "15mb" }));
 app.use(morgan("dev"));
+
 app.get("/", (req, res) => {
-  res.json({
-    message: "TradeVibe API is running",
-    status: "ok",
-  });
+  res.json({ message: "TradeVibe API is running", status: "ok" });
 });
 
 app.use("/api/auth", authRoutes);
